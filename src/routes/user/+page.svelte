@@ -11,7 +11,7 @@
   let paymentMethod: "qris" | "cash" | "" = "";
   let qrisImage = "/qris.png";
   let showSidebar: boolean = false;
-  let qrisBaseLink = "https://link.dana.id/qr/XXXXXX";
+  let qrisBaseLink = "https://link.dana.id/qr/082285467993";
   let qrisLink: string = "";
 
   $: if (paymentMethod === "qris") {
