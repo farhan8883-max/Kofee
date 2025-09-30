@@ -135,7 +135,7 @@ async function handleCheckout() {
 <!-- Topbar Mobile -->
 <div class="topbar-mobile">
   <button class="burger" on:click={() => (showSidebar = true)}>☰</button>
-  <span class="brand-mobile">Warkop Street</span>
+  <span class="brand-mobile">Dialog Senja</span>
   <button class="cart-btn" on:click={() => (showCart = true)}>🛒 ({cart.length})</button>
 </div>
 
@@ -144,7 +144,7 @@ async function handleCheckout() {
   <aside class="sidebar {showSidebar ? 'open' : ''}">
     <div class="brand">
       <img src="/logo3.png" alt="Logo" class="logo" />
-      <span class="company-name">Warkop Street</span>
+      <span class="company-name">Dialog Senja</span>
     </div>
 
     <nav class="categories">
@@ -350,7 +350,7 @@ body {
   gap: 10px;
   margin-bottom: 30px;
 }
-.brand .logo { width: 50px; height: 50px; border-radius: 8px; }
+.brand .logo { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
 .brand .company-name { font-weight: bold; font-size: 1.3rem; }
 .categories { display: flex; flex-direction: column; gap: 15px; width: 100%; margin-bottom: auto; }
 .categories button {
