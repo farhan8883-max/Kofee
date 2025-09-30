@@ -148,7 +148,7 @@
   <aside class:open={sidebarOpen} class="sidebar">
     <h2 class="logo">
       <img src="/logo3.png" alt="Logo" class="logo-img" />
-      Cofee Street
+      Dialog Senja
     </h2>
     <nav>
       <button class:active={activeTab === "orders"} on:click={() => {activeTab = "orders"; sidebarOpen=false}}>📦 Pesanan</button>
@@ -319,7 +319,7 @@
     th, td { font-size: 13px; padding: 8px; }
   }
   .sidebar .logo { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: bold; color: #000000; }
-  .logo-img { width: 28px; height: 28px; object-fit: contain; }
+  .logo-img { width: 40px; height: 40px; object-fit: cover; border-radius: 50%;}
   .logout-btn { margin-top: auto; padding: 10px 15px; border: none; border-radius: 8px; background: #e53935; color: #000000; font-size: 15px; cursor: pointer; }
   .logout-btn:hover { background: #c62828; }
 </style>
