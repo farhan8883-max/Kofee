@@ -9,6 +9,7 @@
     total_price: number;
     status: string;
     payment_method: "qris" | "cash";
+    qris_proof?: string; // bukti pembayaran
     created_at: string;
   };
 
@@ -32,7 +33,7 @@
   async function fetchOrders() {
     const { data, error } = await supabase
       .from("orders")
-      .select("id, customer_name, items, total_price, status, payment_method, created_at")
+      .select("id, customer_name, items, total_price, status, payment_method, qris_proof, created_at")
       .order("id", { ascending: false });
 
     if (error) {
@@ -133,40 +134,33 @@
   });
 
   async function logout() {
-  const { error } = await supabase.auth.signOut();
-  if (error) {
-    message = error.message;
-    return;
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      message = error.message;
+      return;
+    }
+    window.location.href = "/login";
   }
-  // redirect ke halaman login, misalnya /login
-  window.location.href = "/login";
-}
-
 </script>
 
 <div class="dashboard">
   <!-- Sidebar -->
-<aside class:open={sidebarOpen} class="sidebar">
-  <h2 class="logo">
-    <img src="/logo3.png" alt="Logo" class="logo-img" />
-    Cofee Street
-  </h2>
-  <nav>
-    <button class:active={activeTab === "orders"} on:click={() => {activeTab = "orders"; sidebarOpen=false}}>📦 Pesanan</button>
-    <button class:active={activeTab === "summary"} on:click={() => {activeTab = "summary"; sidebarOpen=false}}>💰 Ringkasan</button>
-     <!-- Tombol Logout -->
-  <button class="logout-btn" on:click={logout}>🚪 Logout</button>
-  </nav>
- 
-</aside>
+  <aside class:open={sidebarOpen} class="sidebar">
+    <h2 class="logo">
+      <img src="/logo3.png" alt="Logo" class="logo-img" />
+      Cofee Street
+    </h2>
+    <nav>
+      <button class:active={activeTab === "orders"} on:click={() => {activeTab = "orders"; sidebarOpen=false}}>📦 Pesanan</button>
+      <button class:active={activeTab === "summary"} on:click={() => {activeTab = "summary"; sidebarOpen=false}}>💰 Ringkasan</button>
+      <button class="logout-btn" on:click={logout}>🚪 Logout</button>
+    </nav>
+  </aside>
 
-
-  <!-- Overlay untuk HP -->
   {#if sidebarOpen}
     <div class="overlay" on:click={() => sidebarOpen = false}></div>
   {/if}
 
-  <!-- Main Content -->
   <main class="main">
     <header class="header">
       <button class="burger" on:click={() => sidebarOpen = !sidebarOpen}>☰</button>
@@ -184,7 +178,7 @@
           <table class="orders-table">
             <thead>
               <tr>
-                <th>ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Metode</th><th>Status</th><th>Aksi</th>
+                <th>ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Metode</th><th>Bukti</th><th>Status</th><th>Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -201,6 +195,15 @@
                   </td>
                   <td>Rp {o.total_price.toLocaleString()}</td>
                   <td><span class="tag {o.payment_method}">{o.payment_method}</span></td>
+                  <td>
+                    {#if o.payment_method === "qris" && o.qris_proof}
+                      <a href={o.qris_proof} target="_blank">
+                        <img src={o.qris_proof} alt="Bukti QRIS" style="width:60px; height:auto; border-radius:4px;" />
+                      </a>
+                    {:else}
+                      -
+                    {/if}
+                  </td>
                   <td><span class="status {o.status}">{o.status}</span></td>
                   <td>
                     {#if o.status === "pending"}
@@ -277,160 +280,46 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: "Segoe UI", sans-serif; }
-
-  .dashboard {
-    display: flex;
-    height: 100vh;
-    background: #f9fafc;
-    color: #333;
-  }
-
-  .sidebar {
-    width: 220px;
-    background: #fff;
-    border-right: 1px solid #eee;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    transition: transform 0.3s ease;
-  }
+  .dashboard { display: flex; height: 100vh; background: #f9fafc; color: #333; }
+  .sidebar { width: 220px; background: #fff; border-right: 1px solid #eee; padding: 20px; display: flex; flex-direction: column; gap: 20px; transition: transform 0.3s ease; }
   .sidebar .logo { font-size: 20px; font-weight: bold; color: #000000; }
-  .sidebar nav button {
-    padding: 10px 15px;
-    border: none;
-    background: none;
-    text-align: left;
-    cursor: pointer;
-    font-size: 15px;
-    border-radius: 8px;
-  }
-  .sidebar nav button.active, .sidebar nav button:hover {
-    background: #4caf50;
-    color: #fff;
-  }
-
-  .overlay {
-    position: fixed;
-    top:0; left:0; right:0; bottom:0;
-    background: rgba(0,0,0,0.4);
-    z-index: 9;
-  }
-
-  .main {
-    flex: 1;
-    padding: 20px 30px;
-    overflow-y: auto;
-    width: 100%;
-  }
-
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    margin-bottom: 20px;
-  }
+  .sidebar nav button { padding: 10px 15px; border: none; background: none; text-align: left; cursor: pointer; font-size: 15px; border-radius: 8px; }
+  .sidebar nav button.active, .sidebar nav button:hover { background: #4caf50; color: #fff; }
+  .overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index: 9; }
+  .main { flex: 1; padding: 20px 30px; overflow-y: auto; width: 100%; }
+  .header { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; }
   .header h1 { font-size: 22px; }
-  .burger {
-    display: none;
-    font-size: 22px;
-    background: none;
-    border: none;
-    cursor: pointer;
-  }
-
+  .burger { display: none; font-size: 22px; background: none; border: none; cursor: pointer; }
   .table-wrapper { overflow-x: auto; }
-  .orders-table, .summary-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 20px;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    min-width: 600px;
-  }
-  th, td {
-    padding: 12px 14px;
-    border-bottom: 1px solid #eee;
-    text-align: left;
-    font-size: 14px;
-  }
+  .orders-table, .summary-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); min-width: 600px; }
+  th, td { padding: 12px 14px; border-bottom: 1px solid #eee; text-align: left; font-size: 14px; }
   th { background: #f4f4f8; }
-
-  .tag {
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 12px;
-    color: #fff;
-  }
+  .tag { padding: 4px 8px; border-radius: 6px; font-size: 12px; color: #fff; }
   .tag.qris { background: #3f51b5; }
   .tag.cash { background: #ff9800; }
-
   .status.pending { color: #ff9800; font-weight: bold; }
   .status.done { color: #4caf50; font-weight: bold; }
   .done { color: #4caf50; }
-
-  .done-btn, .delete-btn {
-    padding: 5px 8px;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    margin-right: 4px;
-  }
+  .done-btn, .delete-btn { padding: 5px 8px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; margin-right: 4px; }
   .done-btn { background: #4caf50; color: #fff; }
   .done-btn:hover { background: #3e9142; }
   .delete-btn { background: #e53935; color: #fff; }
   .delete-btn:hover { background: #c62828; }
-
   .weekly-list { list-style: none; padding: 0; }
   .weekly-list li { margin: 5px 0; }
-
   .grand-total { font-size: 16px; margin: 15px 0; }
   .msg { color: red; margin-bottom: 10px; }
   .empty { text-align: center; margin: 20px 0; font-style: italic; }
-
-  /* Responsive */
   @media (max-width: 768px) {
-    .sidebar {
-      position: fixed;
-      top:0; left:0;
-      height: 100%;
-      transform: translateX(-100%);
-      z-index: 10;
-    }
+    .sidebar { position: fixed; top:0; left:0; height: 100%; transform: translateX(-100%); z-index: 10; }
     .sidebar.open { transform: translateX(0); }
     .burger { display: block; }
     .main { padding: 15px; }
     .header h1 { font-size: 18px; }
     th, td { font-size: 13px; padding: 8px; }
   }
-  .sidebar .logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 20px;
-  font-weight: bold;
-  color: #000000;
-}
-
-.logo-img {
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-}
-.logout-btn {
-  margin-top: auto; /* posisi di bawah sidebar */
-  padding: 10px 15px;
-  border: none;
-  border-radius: 8px;
-  background: #e53935;
-  color: #000000;
-  font-size: 15px;
-  cursor: pointer;
-}
-.logout-btn:hover {
-  background: #c62828;
-}
-
+  .sidebar .logo { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: bold; color: #000000; }
+  .logo-img { width: 28px; height: 28px; object-fit: contain; }
+  .logout-btn { margin-top: auto; padding: 10px 15px; border: none; border-radius: 8px; background: #e53935; color: #000000; font-size: 15px; cursor: pointer; }
+  .logout-btn:hover { background: #c62828; }
 </style>
