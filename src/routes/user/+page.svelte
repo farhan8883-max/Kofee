@@ -11,6 +11,11 @@
   let paymentMethod: "qris" | "cash" | "" = "";
   let qrisImage = "/qris.png";
   let showSidebar: boolean = false;
+  
+
+  let qrisProofFile: File | null = null;     // file asli
+  let qrisPreview: string | null = null;     // preview lokal
+  let qrisProofUrl: string | null = null;    // URL dari Supabase
 
   const menu = [
     {
@@ -58,36 +63,72 @@
 
   $: total = cart.reduce((sum, c) => sum + c.price * c.qty, 0);
 
-  async function handleCheckout() {
-    if (!customerName || cart.length === 0 || !paymentMethod) {
-      message = "Isi nama, pilih menu, dan metode pembayaran!";
-      return;
-    }
-    try {
-      const { error } = await supabase.from("orders").insert([
-        {
-          customer_name: customerName,
-          items: cart,
-          total_price: total,
-          status: "pending",
-          payment_method: paymentMethod
-        },
-      ]);
-      if (error) throw error;
+async function handleCheckout() {
+  if (!customerName || cart.length === 0 || !paymentMethod) {
+    message = "Isi nama, pilih menu, dan metode pembayaran!";
+    return;
+  }
 
-      message = "Pesanan berhasil dikirim ke admin!";
-      showSummary = true;
-    } catch (err: unknown) {
-      message = err instanceof Error ? err.message : String(err);
+  if (paymentMethod === "qris") {
+    if (!qrisProofFile) {
+      message = "Upload bukti pembayaran QRIS terlebih dahulu!";
+      return;
     }
   }
 
-  // render bintang (pakai simbol ★☆)
+  try {
+    qrisProofUrl = null;
+
+    if (paymentMethod === "qris" && qrisProofFile) {
+      const fileName = `${Date.now()}-${qrisProofFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("qris_proofs")
+        .upload(fileName, qrisProofFile);
+
+      if (uploadError) throw uploadError;
+
+      qrisProofUrl = supabase.storage
+        .from("qris_proofs")
+        .getPublicUrl(fileName).data.publicUrl;
+    }
+
+    const { error } = await supabase.from("orders").insert([
+      {
+        customer_name: customerName,
+        items: cart,
+        total_price: total,
+        status: "pending",
+        payment_method: paymentMethod,
+        qris_proof: qrisProofUrl,
+      },
+    ]);
+    if (error) throw error;
+
+    message = "Pesanan berhasil dikirim ke admin!";
+    showSummary = true;
+  } catch (err: unknown) {
+    message = err instanceof Error ? err.message : String(err);
+  }
+}
+
+
+  // render bintang rating
   function renderStars(rating: number) {
     const fullStars = Math.floor(rating);
     const halfStar = rating % 1 >= 0.5;
     const stars = "★".repeat(fullStars) + (halfStar ? "☆" : "");
     return stars.padEnd(5, "☆");
+  }
+
+  // handle preview file bukti QRIS
+  function handleFileChange(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0] || null;
+    qrisProofFile = file;
+    if (file) {
+      qrisPreview = URL.createObjectURL(file);
+    } else {
+      qrisPreview = null;
+    }
   }
 </script>
 
@@ -163,13 +204,11 @@
     <div class="modal">
       <h2>🛒 Keranjang</h2>
 
-      <!-- Input nama hanya muncul jika belum checkout -->
       {#if !showSummary}
         <input type="text" placeholder="Nama Pemesan" bind:value={customerName} />
       {/if}
 
       {#if cart.length > 0 && !showSummary}
-        <!-- Pilih metode pembayaran -->
         <div class="payment-method">
           <label><input type="radio" bind:group={paymentMethod} value="qris" /> QRIS</label>
           <label><input type="radio" bind:group={paymentMethod} value="cash" /> Cash</label>
@@ -185,10 +224,23 @@
           {/each}
         </ul>
         <p class="total">Total: Rp {total.toLocaleString()}</p>
+
+        {#if paymentMethod === "qris"}
+          <div class="qris-section">
+            <p>Scan QRIS berikut untuk pembayaran:</p>
+            <img src={qrisImage} alt="QRIS Pembayaran" class="qris-img" />
+            <p>Upload bukti pembayaran:</p>
+            <input type="file" accept="image/*" on:change={handleFileChange} />
+            {#if qrisPreview}
+              <p>Preview bukti pembayaran:</p>
+              <img src={qrisPreview} alt="Preview Bukti QRIS" class="qris-preview" />
+            {/if}
+          </div>
+        {/if}
+
         <button class="checkout" on:click={handleCheckout}>💳 Konfirmasi Pesanan</button>
 
       {:else if showSummary}
-        <!-- Struk belanja -->
         <div class="order-summary">
           <h3>👤 Pemesan: {customerName}</h3>
           <ul>
@@ -203,8 +255,12 @@
 
           {#if paymentMethod === "qris"}
             <div class="qris-section">
-              <p>Scan QRIS berikut untuk pembayaran:</p>
-              <img src={qrisImage} alt="QRIS Pembayaran" class="qris-img" />
+              <p>Bukti pembayaran QRIS:</p>
+              {#if qrisProofUrl}
+                <img src={qrisProofUrl} alt="Bukti Pembayaran QRIS" class="qris-img" />
+              {:else}
+                <p><em>Bukti pembayaran belum tersedia.</em></p>
+              {/if}
             </div>
           {:else if paymentMethod === "cash"}
             <p class="cash-note">💵 Silakan bayar tunai ke kasir.</p>
@@ -227,6 +283,9 @@
           cart = []; 
           customerName = ""; 
           qtySelections = {}; 
+          qrisProofFile = null;
+          qrisPreview = null;
+          qrisProofUrl = null;
         }}
       >
         Tutup
@@ -451,5 +510,13 @@ body {
     gap: 12px;
   }
   .card img { height: 100px; }
+}
+/* ... semua style sama seperti punyamu, ditambah style preview ... */
+
+.qris-preview {
+  margin-top: 10px;
+  width: 200px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 </style>
