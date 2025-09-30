@@ -44,14 +44,15 @@
   <div class="auth-card">
     <div class="auth-header">
       <img src="/logo3.png" alt="Logo" class="logo" />
-      <h2>MyCompany</h2>
+      <h2>Dialog Senja</h2>
       <p>Silakan login untuk melanjutkan</p>
+      <p>Click Tombol Pakai</p>
     </div>
 
     <form on:submit|preventDefault={handleLogin} class="auth-form">
       <div class="input-group">
         <input type="email" placeholder="Email" bind:value={email} required />
-        <button type="button" class="use-btn" on:click={useDemoCredentials}>Pakai</button>
+        <button type="button" class="use-btn" on:click={useDemoCredentials} style="background-color: black; color :white">Pakai</button>
       </div>
 
       <div class="input-group">
@@ -99,9 +100,13 @@
   }
 
   .auth-header .logo {
-    width: 60px;
-    margin-bottom: 0.5rem;
-  }
+  width: 60px;
+  height: 60px; /* biar jadi kotak sempurna */
+  border-radius: 50%; /* bikin lingkaran */
+  object-fit: cover;  /* jaga proporsi gambar */
+  margin-bottom: 0.5rem;
+}
+
 
   .auth-header h2 {
     margin: 0;
