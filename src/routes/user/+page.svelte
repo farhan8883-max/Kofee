@@ -11,13 +11,6 @@
   let paymentMethod: "qris" | "cash" | "" = "";
   let qrisImage = "/qris.png";
   let showSidebar: boolean = false;
-  let qrisBaseLink = "https://link.dana.id/qr/082285467993";
-  let qrisLink: string = "";
-
-  $: if (paymentMethod === "qris") {
-  qrisLink = `${qrisBaseLink}?amount=${total}&note=Pembelian Warkop Street`;
-}
-
 
   const menu = [
     {
@@ -209,15 +202,13 @@
           <p class="total">Total: Rp {total.toLocaleString()}</p>
 
           {#if paymentMethod === "qris"}
-  <div class="qris-section">
-    <p>Scan atau klik QRIS untuk bayar:</p>
-    <a href={qrisLink} target="_blank">
-      <img src={qrisImage} alt="QRIS Pembayaran" class="qris-img" />
-    </a>
-    <p class="pay-note">Total akan otomatis masuk: Rp {total.toLocaleString()}</p>
-  </div>
-{/if}
-
+            <div class="qris-section">
+              <p>Scan QRIS berikut untuk pembayaran:</p>
+              <img src={qrisImage} alt="QRIS Pembayaran" class="qris-img" />
+            </div>
+          {:else if paymentMethod === "cash"}
+            <p class="cash-note">💵 Silakan bayar tunai ke kasir.</p>
+          {/if}
         </div>
       {:else}
         <p class="empty">Keranjang kosong</p>
