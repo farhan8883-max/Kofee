@@ -11,6 +11,13 @@
   let paymentMethod: "qris" | "cash" | "" = "";
   let qrisImage = "/qris.png";
   let showSidebar: boolean = false;
+  let qrisBaseLink = "https://link.dana.id/qr/XXXXXX";
+  let qrisLink: string = "";
+
+  $: if (paymentMethod === "qris") {
+  qrisLink = `${qrisBaseLink}?amount=${total}&note=Pembelian Warkop Street`;
+}
+
 
   const menu = [
     {
@@ -65,12 +72,12 @@
     }
     try {
       const { error } = await supabase.from("orders").insert([
-        { 
-          customer_name: customerName, 
-          items: cart, 
-          total_price: total, 
-          status: "pending", 
-          payment_method: paymentMethod 
+        {
+          customer_name: customerName,
+          items: cart,
+          total_price: total,
+          status: "pending",
+          payment_method: paymentMethod
         },
       ]);
       if (error) throw error;
@@ -158,10 +165,9 @@
 </div>
 
 <!-- Modal Keranjang -->
-<!-- Modal Keranjang -->
 {#if showCart}
-  <div class="modal-overlay" on:click={() => { showCart = false; showSummary = false; paymentMethod = ""; }}>
-    <div class="modal" on:click|stopPropagation>
+  <div class="modal-overlay">
+    <div class="modal">
       <h2>🛒 Keranjang</h2>
 
       <!-- Input nama hanya muncul jika belum checkout -->
@@ -203,13 +209,15 @@
           <p class="total">Total: Rp {total.toLocaleString()}</p>
 
           {#if paymentMethod === "qris"}
-            <div class="qris-section">
-              <p>Scan QRIS berikut untuk pembayaran:</p>
-              <img src={qrisImage} alt="QRIS Pembayaran" class="qris-img" />
-            </div>
-          {:else if paymentMethod === "cash"}
-            <p class="cash-note">💵 Silakan bayar tunai ke kasir.</p>
-          {/if}
+  <div class="qris-section">
+    <p>Scan atau klik QRIS untuk bayar:</p>
+    <a href={qrisLink} target="_blank">
+      <img src={qrisImage} alt="QRIS Pembayaran" class="qris-img" />
+    </a>
+    <p class="pay-note">Total akan otomatis masuk: Rp {total.toLocaleString()}</p>
+  </div>
+{/if}
+
         </div>
       {:else}
         <p class="empty">Keranjang kosong</p>
@@ -220,23 +228,21 @@
       {/if}
 
       <button 
-  class="close-btn" 
-  on:click={() => { 
-    showCart = false; 
-    showSummary = false; 
-    paymentMethod = ""; 
-    cart = []; 
-    customerName = ""; 
-    qtySelections = {}; 
-  }}
->
-  Tutup
-</button>
-
+        class="close-btn" 
+        on:click={() => { 
+          showCart = false; 
+          showSummary = false; 
+          paymentMethod = ""; 
+          cart = []; 
+          customerName = ""; 
+          qtySelections = {}; 
+        }}
+      >
+        Tutup
+      </button>
     </div>
   </div>
 {/if}
-
 
 <style>
 body {
