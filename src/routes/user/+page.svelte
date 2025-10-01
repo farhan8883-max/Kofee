@@ -11,6 +11,7 @@
   let paymentMethod: "qris" | "cash" | "" = "";
   let qrisImage = "/qris.png";
   let showSidebar: boolean = false;
+  let orderType: "dine_in" | "take_away" = "dine_in"; // default
   
 
   let qrisProofFile: File | null = null;     // file asli
@@ -21,17 +22,18 @@
     {
       category: "Makanan",
       items: [
-        { name: "Nasi Goreng", price: 20000, image: "https://images.unsplash.com/photo-1627308595229-7830a5c91f9f", bestSeller: true, rating: 4.8 },
-        { name: "Mie Goreng", price: 20000, image: "https://images.unsplash.com/photo-1627308595229-7830a5c91f9f", bestSeller: false, rating: 4.2 },
-        { name: "Mie Ayam", price: 15000, image: "https://images.unsplash.com/photo-1604908177446-912e9a6c7b1d", bestSeller: true, rating: 4.5 },
-        { name: "Sate Ayam", price: 25000, image: "https://images.unsplash.com/photo-1604908177430-bad04aa986c0", bestSeller: false, rating: 4.0 },
+        { name: "Nasi Goreng", price: 20000, image: "/Nasi Goreng Teri Pete.png", bestSeller: true, rating: 4.8 },
+        { name: "Mie Goreng", price: 20000, image: "/miegoreng.png", bestSeller: false, rating: 4.2 },
+        { name: "Mie rebus", price: 15000, image: "/mierebus.png", bestSeller: true, rating: 4.5 },
+        { name: "Mie Ayam", price: 25000, image: "/Mie ayam.png", bestSeller: false, rating: 4.0 },
       ],
     },
     {
       category: "Minuman",
       items: [
-        { name: "Es Teh", price: 5000, image: "https://images.unsplash.com/photo-1510626176961-4b37d0f0b660", bestSeller: false, rating: 4.1 },
-        { name: "Kopi", price: 10000, image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93", bestSeller: true, rating: 4.9 },
+        { name: "Es Teh", price: 5000, image: "/tehobeng.png", bestSeller: false, rating: 4.1 },
+        { name: "Kopi Torabica", price: 10000, image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93", bestSeller: true, rating: 4.9 },
+        { name: "Kopi Dialog senja", price: 10000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
       ],
     },
   ];
@@ -48,14 +50,21 @@
     goto("/login");
   }
 
-  function addToCart(item: Item) {
-    const qty = qtySelections[item.name] || 1;
-    if (qty <= 0) return;
-    const existing = cart.find((c) => c.name === item.name);
-    if (existing) existing.qty += qty;
-    else cart = [...cart, { ...item, qty }];
-    qtySelections[item.name] = 1;
-  }
+  let addedItems: Record<string, boolean> = {}; // menyimpan state tombol sudah diklik
+
+function addToCart(item: Item) {
+  const qty = qtySelections[item.name] || 1;
+  if (qty <= 0) return;
+
+  const existing = cart.find((c) => c.name === item.name);
+  if (existing) existing.qty += qty;
+  else cart = [...cart, { ...item, qty }];
+
+  qtySelections[item.name] = 1;
+
+  // tandai item sudah pernah ditambahkan
+  addedItems[item.name] = true;
+}
 
   function removeFromCart(name: string) {
     cart = cart.filter((c) => c.name !== name);
@@ -93,15 +102,17 @@ async function handleCheckout() {
     }
 
     const { error } = await supabase.from("orders").insert([
-      {
-        customer_name: customerName,
-        items: cart,
-        total_price: total,
-        status: "pending",
-        payment_method: paymentMethod,
-        qris_proof: qrisProofUrl,
-      },
-    ]);
+  {
+    customer_name: customerName,
+    items: cart,
+    total_price: total,
+    status: "pending",
+    payment_method: paymentMethod,
+    order_type: orderType,   // ✅ sudah sesuai constraint
+    qris_proof: qrisProofUrl,
+  },
+]);
+
     if (error) throw error;
 
     message = "Pesanan berhasil dikirim ke admin!";
@@ -189,7 +200,13 @@ async function handleCheckout() {
               <p class="price">Rp {m.price.toLocaleString()}</p>
               <p class="rating">{renderStars(m.rating)} <span>{m.rating.toFixed(1)}</span></p>
               <input type="number" min="1" bind:value={qtySelections[m.name]} placeholder="1" />
-              <button on:click={() => addToCart(m)}>+ Tambah</button>
+              <button 
+  on:click={() => addToCart(m)} 
+  disabled={addedItems[m.name]}
+>
+  {addedItems[m.name] ? "✔ Ditambahkan" : "+ Tambah"}
+</button>
+
             </div>
           {/each}
         {/if}
@@ -209,6 +226,19 @@ async function handleCheckout() {
       {/if}
 
       {#if cart.length > 0 && !showSummary}
+
+     <!-- Pilihan Dine In / Take Away -->
+<div class="order-type">
+  <label class:selected={orderType === "dine_in"}>
+    <input type="radio" bind:group={orderType} value="dine_in" />
+    Makan di Sini
+  </label>
+  <label class:selected={orderType === "take_away"}>
+    <input type="radio" bind:group={orderType} value="take_away" />
+    Take Away
+  </label>
+</div>
+
         <div class="payment-method">
           <label><input type="radio" bind:group={paymentMethod} value="qris" /> QRIS</label>
           <label><input type="radio" bind:group={paymentMethod} value="cash" /> Cash</label>
@@ -286,6 +316,7 @@ async function handleCheckout() {
           qrisProofFile = null;
           qrisPreview = null;
           qrisProofUrl = null;
+          addedItems = {};   // ✅ reset state tombol
         }}
       >
         Tutup
@@ -519,4 +550,41 @@ body {
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
+.order-type {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin: 15px 0;
+}
+
+.order-type label {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  text-align: center;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #f9fafb;
+}
+
+.order-type label.selected {
+  border-color: #00754a;
+  background: #e6f9f0;
+  color: #00754a;
+}
+
+.order-type input {
+  display: none;
+}
+
+.order-type-summary {
+  margin: 10px 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #00754a;
+}
 </style>
+
+
