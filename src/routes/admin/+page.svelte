@@ -3,15 +3,17 @@
   import { onMount } from "svelte";
 
   type Order = {
-    id: number;
-    customer_name: string;
-    items: { name: string; price: number; qty: number }[];
-    total_price: number;
-    status: string;
-    payment_method: "qris" | "cash";
-    qris_proof?: string; // bukti pembayaran
-    created_at: string;
-  };
+  id: number;
+  customer_name: string;
+  items: { name: string; price: number; qty: number }[];
+  total_price: number;
+  status: string;
+  payment_method: "qris" | "cash";
+  qris_proof?: string; // bukti pembayaran
+  order_type: "dine_in" | "take_away"; // ✅ tambah ini
+  created_at: string;
+};
+
 
   type Summary = {
     period: string;
@@ -31,10 +33,10 @@
   let sidebarOpen = false;
 
   async function fetchOrders() {
-    const { data, error } = await supabase
-      .from("orders")
-      .select("id, customer_name, items, total_price, status, payment_method, qris_proof, created_at")
-      .order("id", { ascending: false });
+   const { data, error } = await supabase
+  .from("orders")
+  .select("id, customer_name, items, total_price, status, payment_method, qris_proof, order_type, created_at") // ✅ order_type ditambah
+  .order("id", { ascending: false });
 
     if (error) {
       message = error.message;
@@ -54,13 +56,15 @@
   }
 
   async function deleteOrder(id: number) {
-    const { error } = await supabase.from("orders").update({ status: "deleted" }).eq("id", id);
-    if (error) {
-      message = error.message;
-      return;
-    }
-    await fetchOrders();
+  const { error } = await supabase.from("orders").delete().eq("id", id); // ✅ hapus permanen
+  if (error) {
+    message = error.message;
+    return;
   }
+  await fetchOrders();
+  await fetchSummary();
+}
+
 
   async function fetchSummary() {
     const { data, error } = await supabase
@@ -177,45 +181,61 @@
         <div class="table-wrapper">
           <table class="orders-table">
             <thead>
-              <tr>
-                <th>ID</th><th>Customer</th><th>Items</th><th>Total</th><th>Metode</th><th>Bukti</th><th>Status</th><th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {#each orders as o}
-                <tr>
-                  <td>{o.id}</td>
-                  <td>{o.customer_name}</td>
-                  <td>
-                    <ul>
-                      {#each o.items as it}
-                        <li>{it.name} × {it.qty}</li>
-                      {/each}
-                    </ul>
-                  </td>
-                  <td>Rp {o.total_price.toLocaleString()}</td>
-                  <td><span class="tag {o.payment_method}">{o.payment_method}</span></td>
-                  <td>
-                    {#if o.payment_method === "qris" && o.qris_proof}
-                      <a href={o.qris_proof} target="_blank">
-                        <img src={o.qris_proof} alt="Bukti QRIS" style="width:60px; height:auto; border-radius:4px;" />
-                      </a>
-                    {:else}
-                      -
-                    {/if}
-                  </td>
-                  <td><span class="status {o.status}">{o.status}</span></td>
-                  <td>
-                    {#if o.status === "pending"}
-                      <button class="done-btn" on:click={() => markAsDone(o.id)}>✔</button>
-                    {:else}
-                      <span class="done">✅</span>
-                    {/if}
-                    <button class="delete-btn" on:click={() => deleteOrder(o.id)}>🗑</button>
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
+  <tr>
+    <th>ID</th>
+    <th>Customer</th>
+    <th>Items</th>
+    <th>Total</th>
+    <th>Metode</th>
+    <th>Bukti</th>
+    <th>Tipe Order</th> <!-- ✅ kolom baru -->
+    <th>Status</th>
+    <th>Aksi</th>
+  </tr>
+</thead>
+<tbody>
+  {#each orders as o}
+    <tr>
+      <td>{o.id}</td>
+      <td>{o.customer_name}</td>
+      <td>
+        <ul>
+          {#each o.items as it}
+            <li>{it.name} × {it.qty}</li>
+          {/each}
+        </ul>
+      </td>
+      <td>Rp {o.total_price.toLocaleString()}</td>
+      <td><span class="tag {o.payment_method}">{o.payment_method}</span></td>
+      <td>
+        {#if o.payment_method === "qris" && o.qris_proof}
+          <a href={o.qris_proof} target="_blank">
+            <img src={o.qris_proof} alt="Bukti QRIS" style="width:60px; height:auto; border-radius:4px;" />
+          </a>
+        {:else}
+          -
+        {/if}
+      </td>
+      <td>
+        {#if o.order_type === "dine_in"}
+          🍽 Makan di tempat
+        {:else}
+          🥡 Take Away
+        {/if}
+      </td>
+      <td><span class="status {o.status}">{o.status}</span></td>
+      <td>
+        {#if o.status === "pending"}
+          <button class="done-btn" on:click={() => markAsDone(o.id)}>✔</button>
+        {:else}
+          <span class="done">✅</span>
+        {/if}
+        <button class="delete-btn" on:click={() => deleteOrder(o.id)}>🗑</button>
+      </td>
+    </tr>
+  {/each}
+</tbody>
+
           </table>
         </div>
       {:else}
