@@ -1,70 +1,62 @@
 <script>
-  import { supabase } from "$lib/supabaseClient";
-  import { goto } from "$app/navigation";
+  import { supabase } from '$lib/supabase'
+  import { goto } from '$app/navigation'
 
-  let username = "";
-  let email = "";
-  let password = "";
-  let role = "user";
-  let message = "";
+  let email = ''
+  let password = ''
+  let username = ''
+  let message = ''
 
-  async function handleRegister() {
-    message = "";
+  const register = async () => {
+    message = "Processing..."
 
-    try {
-      const { data: existing } = await supabase
-        .from("users")
-        .select("id")
-        .eq("email", email)
-        .single();
-
-      if (existing) {
-        message = "Email sudah terdaftar!";
-        return;
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { username }
       }
+    })
 
-      const { error } = await supabase.from("users").insert([
-        { username, email, password, role }
-      ]);
-
-      if (error) throw error;
-
-      message = "Registrasi berhasil! Silakan login.";
-      setTimeout(() => goto("/login"), 1500);
-    } catch (err) {
-      message = err instanceof Error ? err.message : String(err);
+    if (error) {
+      console.error(error)
+      message = error.message
+      return
     }
+
+    message = "Registrasi berhasil! Cek email kamu untuk verifikasi sebelum login."
   }
 </script>
 
 <div class="auth-container">
   <div class="auth-card">
     <div class="auth-header">
-      <img src="/logo.png" alt="Logo" class="logo" />
-      <h2>MyCompany</h2>
-      <p>Buat akun baru untuk melanjutkan</p>
+      <img src="/logo3.png" alt="Logo" class="logo" />
+      <h2>Dialog Senja</h2>
+      <p>Silakan register untuk melanjutkan</p>
     </div>
 
-    <form on:submit|preventDefault={handleRegister} class="auth-form">
-      <input type="text" placeholder="Username" bind:value={username} required />
-      <input type="email" placeholder="Email" bind:value={email} required />
-      <input type="password" placeholder="Password" bind:value={password} required />
-
-      <select bind:value={role}>
-        <option value="user">User</option>
-        <option value="admin">Admin</option>
-      </select>
+    <form on:submit|preventDefault={register} class="auth-form">
+      <div class="input-group">
+        <input type="text" placeholder="Username" bind:value={username} required />
+      </div>
+      <div class="input-group">
+        <input type="email" placeholder="Email" bind:value={email} required />
+      </div>
+      <div class="input-group">
+        <input type="password" placeholder="Password" bind:value={password} required />
+      </div>
 
       <button type="submit">Register</button>
     </form>
 
-    <p class="switch" on:click={() => goto("/login")}>
-      Sudah punya akun? <span>Login</span>
-    </p>
-
     {#if message}
       <p class="message">{message}</p>
     {/if}
+
+    <p class="switch" on:click={() => goto("/login")}>
+      Sudah punya akun? <span>Login</span>
+    </p>
   </div>
 </div>
 
@@ -72,7 +64,7 @@
   body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: linear-gradient(135deg, #4f46e5, #3b82f6);
   }
 
   .auth-container {
@@ -94,6 +86,9 @@
 
   .auth-header .logo {
     width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
     margin-bottom: 0.5rem;
   }
 
@@ -115,26 +110,26 @@
     gap: 1rem;
   }
 
-  .auth-form input,
-  .auth-form select {
+  .input-group input {
+    flex: 1;
     padding: 0.8rem;
     border: 1px solid #d1d5db;
     border-radius: 8px;
     font-size: 1rem;
+    width: 100%;
   }
 
-  .auth-form input:focus,
-  .auth-form select:focus {
+  .input-group input:focus {
     outline: none;
-    border-color: #10b981;
-    box-shadow: 0 0 0 2px rgba(16,185,129,0.3);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
   }
 
-  .auth-form button {
+  .auth-form button[type="submit"] {
     padding: 0.8rem;
     border: none;
     border-radius: 8px;
-    background: #10b981;
+    background: #000000;
     color: #fff;
     font-size: 1rem;
     font-weight: bold;
@@ -142,8 +137,8 @@
     transition: background 0.3s;
   }
 
-  .auth-form button:hover {
-    background: #059669;
+  .auth-form button[type="submit"]:hover {
+    background: #535957;
   }
 
   .switch {
