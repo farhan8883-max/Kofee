@@ -164,7 +164,7 @@
     padding: 0.8rem;
     border: none;
     border-radius: 8px;
-    background: #10b981;
+    background: #000000;
     color: #fff;
     font-size: 1rem;
     font-weight: bold;
@@ -173,7 +173,7 @@
   }
 
   .auth-form button[type="submit"]:hover {
-    background: #0f7151;
+    background: #535957;
   }
   
 
