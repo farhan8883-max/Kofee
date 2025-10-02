@@ -1,19 +1,45 @@
 <script lang="ts">
-  import { supabase } from "../../lib/supabaseClient";
+  import { supabase } from "$lib/supabase"; // pastikan path benar
   import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
 
+  // ====== AUTH USER ======
+  let user: any = null;
+  let message: string = "";
+
+  onMount(async () => {
+    // cek user login
+    const { data } = await supabase.auth.getUser();
+    if (!data.user) {
+      goto("/login"); // kalau belum login balik ke login
+    } else {
+      user = data.user;
+      await fetchOrders();
+      await fetchSummary();
+    }
+  });
+
+  async function logout() {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      message = error.message;
+      return;
+    }
+    goto("/login");
+  }
+
+  // ====== ORDERS & SUMMARY ======
   type Order = {
-  id: number;
-  customer_name: string;
-  items: { name: string; price: number; qty: number }[];
-  total_price: number;
-  status: string;
-  payment_method: "qris" | "cash";
-  qris_proof?: string; // bukti pembayaran
-  order_type: "dine_in" | "take_away"; // ✅ tambah ini
-  created_at: string;
-};
-
+    id: number;
+    customer_name: string;
+    items: { name: string; price: number; qty: number }[];
+    total_price: number;
+    status: string;
+    payment_method: "qris" | "cash";
+    qris_proof?: string;
+    order_type: "dine_in" | "take_away";
+    created_at: string;
+  };
 
   type Summary = {
     period: string;
@@ -22,8 +48,6 @@
   };
 
   let orders: Order[] = [];
-  let message: string = "";
-
   let dailySummary: Summary[] = [];
   let weeklySummary: Summary[] = [];
   let monthlySummary: Summary[] = [];
@@ -33,20 +57,25 @@
   let sidebarOpen = false;
 
   async function fetchOrders() {
-   const { data, error } = await supabase
-  .from("orders")
-  .select("id, customer_name, items, total_price, status, payment_method, qris_proof, order_type, created_at") // ✅ order_type ditambah
-  .order("id", { ascending: false });
+    const { data, error } = await supabase
+      .from("orders")
+      .select(
+        "id, customer_name, items, total_price, status, payment_method, qris_proof, order_type, created_at"
+      )
+      .order("id", { ascending: false });
 
     if (error) {
       message = error.message;
       return;
     }
-    orders = ((data as Order[]) || []).filter(o => o.status !== "deleted");
+    orders = ((data as Order[]) || []).filter((o) => o.status !== "deleted");
   }
 
   async function markAsDone(id: number) {
-    const { error } = await supabase.from("orders").update({ status: "done" }).eq("id", id);
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "done" })
+      .eq("id", id);
     if (error) {
       message = error.message;
       return;
@@ -56,15 +85,14 @@
   }
 
   async function deleteOrder(id: number) {
-  const { error } = await supabase.from("orders").delete().eq("id", id); // ✅ hapus permanen
-  if (error) {
-    message = error.message;
-    return;
+    const { error } = await supabase.from("orders").delete().eq("id", id);
+    if (error) {
+      message = error.message;
+      return;
+    }
+    await fetchOrders();
+    await fetchSummary();
   }
-  await fetchOrders();
-  await fetchSummary();
-}
-
 
   async function fetchSummary() {
     const { data, error } = await supabase
@@ -93,7 +121,10 @@
       const weekKey = `${d.getFullYear()}-W${week}`;
       byWeek[weekKey] = (byWeek[weekKey] || 0) + o.total_price;
 
-      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}`;
       byMonth[monthKey] = (byMonth[monthKey] || 0) + o.total_price;
     });
 
@@ -121,29 +152,27 @@
     const dayNum = date.getUTCDay() || 7;
     date.setUTCDate(date.getUTCDate() + 4 - dayNum);
     const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-    return Math.ceil(((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+    return Math.ceil(
+      ((date.getTime() - yearStart.getTime()) / 86400000 + 1) / 7
+    );
   }
 
   function getMonthName(month: number) {
     const months = [
-      "Januari","Februari","Maret","April","Mei","Juni",
-      "Juli","Agustus","September","Oktober","November","Desember"
+      "Januari",
+      "Februari",
+      "Maret",
+      "April",
+      "Mei",
+      "Juni",
+      "Juli",
+      "Agustus",
+      "September",
+      "Oktober",
+      "November",
+      "Desember",
     ];
     return months[month - 1];
-  }
-
-  onMount(async () => {
-    await fetchOrders();
-    await fetchSummary();
-  });
-
-  async function logout() {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      message = error.message;
-      return;
-    }
-    window.location.href = "/login";
   }
 </script>
 
@@ -155,20 +184,39 @@
       Dialog Senja
     </h2>
     <nav>
-      <button class:active={activeTab === "orders"} on:click={() => {activeTab = "orders"; sidebarOpen=false}}>📦 Pesanan</button>
-      <button class:active={activeTab === "summary"} on:click={() => {activeTab = "summary"; sidebarOpen=false}}>💰 Ringkasan</button>
+      <button
+        class:active={activeTab === "orders"}
+        on:click={() => {
+          activeTab = "orders";
+          sidebarOpen = false;
+        }}
+      >
+        📦 Pesanan
+      </button>
+      <button
+        class:active={activeTab === "summary"}
+        on:click={() => {
+          activeTab = "summary";
+          sidebarOpen = false;
+        }}
+      >
+        💰 Ringkasan
+      </button>
       <button class="logout-btn" on:click={logout}>🚪 Logout</button>
     </nav>
   </aside>
 
   {#if sidebarOpen}
-    <div class="overlay" on:click={() => sidebarOpen = false}></div>
+    <div class="overlay" on:click={() => (sidebarOpen = false)}></div>
   {/if}
 
   <main class="main">
     <header class="header">
-      <button class="burger" on:click={() => sidebarOpen = !sidebarOpen}>☰</button>
+      <button class="burger" on:click={() => (sidebarOpen = !sidebarOpen)}>☰</button>
       <h1>{activeTab === "orders" ? "Daftar Pesanan" : "Ringkasan Pemasukan"}</h1>
+      {#if user}
+        <span class="ml-auto text-sm">👋 {user.email}</span>
+      {/if}
     </header>
 
     {#if message}
@@ -181,61 +229,66 @@
         <div class="table-wrapper">
           <table class="orders-table">
             <thead>
-  <tr>
-    <th>ID</th>
-    <th>Customer</th>
-    <th>Items</th>
-    <th>Total</th>
-    <th>Metode</th>
-    <th>Bukti</th>
-    <th>Tipe Order</th> <!-- ✅ kolom baru -->
-    <th>Status</th>
-    <th>Aksi</th>
-  </tr>
-</thead>
-<tbody>
-  {#each orders as o}
-    <tr>
-      <td>{o.id}</td>
-      <td>{o.customer_name}</td>
-      <td>
-        <ul>
-          {#each o.items as it}
-            <li>{it.name} × {it.qty}</li>
-          {/each}
-        </ul>
-      </td>
-      <td>Rp {o.total_price.toLocaleString()}</td>
-      <td><span class="tag {o.payment_method}">{o.payment_method}</span></td>
-      <td>
-        {#if o.payment_method === "qris" && o.qris_proof}
-          <a href={o.qris_proof} target="_blank">
-            <img src={o.qris_proof} alt="Bukti QRIS" style="width:60px; height:auto; border-radius:4px;" />
-          </a>
-        {:else}
-          -
-        {/if}
-      </td>
-      <td>
-        {#if o.order_type === "dine_in"}
-          🍽 Makan di tempat
-        {:else}
-          🥡 Take Away
-        {/if}
-      </td>
-      <td><span class="status {o.status}">{o.status}</span></td>
-      <td>
-        {#if o.status === "pending"}
-          <button class="done-btn" on:click={() => markAsDone(o.id)}>✔</button>
-        {:else}
-          <span class="done">✅</span>
-        {/if}
-        <button class="delete-btn" on:click={() => deleteOrder(o.id)}>🗑</button>
-      </td>
-    </tr>
-  {/each}
-</tbody>
-
+              <tr>
+                <th>ID</th>
+                <th>Customer</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Metode</th>
+                <th>Bukti</th>
+                <th>Tipe Order</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each orders as o}
+                <tr>
+                  <td>{o.id}</td>
+                  <td>{o.customer_name}</td>
+                  <td>
+                    <ul>
+                      {#each o.items as it}
+                        <li>{it.name} × {it.qty}</li>
+                      {/each}
+                    </ul>
+                  </td>
+                  <td>Rp {o.total_price.toLocaleString()}</td>
+                  <td>
+                    <span class="tag {o.payment_method}">{o.payment_method}</span>
+                  </td>
+                  <td>
+                    {#if o.payment_method === "qris" && o.qris_proof}
+                      <a href={o.qris_proof} target="_blank">
+                        <img
+                          src={o.qris_proof}
+                          alt="Bukti QRIS"
+                          style="width:60px; height:auto; border-radius:4px;"
+                        />
+                      </a>
+                    {:else}
+                      -
+                    {/if}
+                  </td>
+                  <td>
+                    {#if o.order_type === "dine_in"}
+                      🍽 Makan di tempat
+                    {:else}
+                      🥡 Take Away
+                    {/if}
+                  </td>
+                  <td><span class="status {o.status}">{o.status}</span></td>
+                  <td>
+                    {#if o.status === "pending"}
+                      <button class="done-btn" on:click={() => markAsDone(o.id)}>✔</button>
+                    {:else}
+                      <span class="done">✅</span>
+                    {/if}
+                    <button class="delete-btn" on:click={() => deleteOrder(o.id)}>🗑</button>
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
           </table>
         </div>
       {:else}
@@ -246,7 +299,9 @@
     <!-- Summary -->
     {#if activeTab === "summary"}
       <div class="summary">
-        <p class="grand-total">Total Keseluruhan: <strong>Rp {totalIncome.toLocaleString()}</strong></p>
+        <p class="grand-total">
+          Total Keseluruhan: <strong>Rp {totalIncome.toLocaleString()}</strong>
+        </p>
 
         <h3>Rekap Harian</h3>
         <div class="table-wrapper">
@@ -270,7 +325,9 @@
         <h3>Rekap Bulanan</h3>
         <div class="table-wrapper">
           <table class="summary-table">
-            <thead><tr><th>Bulan</th><th>Total</th><th>Perbandingan</th></tr></thead>
+            <thead>
+              <tr><th>Bulan</th><th>Total</th><th>Perbandingan</th></tr>
+            </thead>
             <tbody>
               {#each monthlySummary as s, i}
                 <tr>
@@ -278,10 +335,10 @@
                   <td>Rp {s.total.toLocaleString()}</td>
                   <td>
                     {#if i > 0}
-                      {#if s.total - monthlySummary[i-1].total >= 0}
-                        🔼 Rp {(s.total - monthlySummary[i-1].total).toLocaleString()}
+                      {#if s.total - monthlySummary[i - 1].total >= 0}
+                        🔼 Rp {(s.total - monthlySummary[i - 1].total).toLocaleString()}
                       {:else}
-                        🔽 Rp {Math.abs(s.total - monthlySummary[i-1].total).toLocaleString()}
+                        🔽 Rp {Math.abs(s.total - monthlySummary[i - 1].total).toLocaleString()}
                       {/if}
                     {:else}
                       -
@@ -343,3 +400,4 @@
   .logout-btn { margin-top: auto; padding: 10px 15px; border: none; border-radius: 8px; background: #e53935; color: #000000; font-size: 15px; cursor: pointer; }
   .logout-btn:hover { background: #c62828; }
 </style>
+
