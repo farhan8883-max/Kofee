@@ -6,38 +6,40 @@
   let password = "";
   let message = "";
 
-  function useDemoCredentials() {
-    email = "costumer@gmail.com";
-    password = "123456";
-  }
+  // login pakai supabase auth
+  const handleLogin = async () => {
+    message = "Processing...";
 
-  async function handleLogin() {
-    message = "";
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
 
-    try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("email", email)
-        .eq("password", password)
-        .single();
+    if (error) {
+      console.error(error);
+      message = error.message;
+      return;
+    }
 
-      if (error || !data) {
-        message = "Email atau password salah!";
+    if (data.user) {
+      // cek verifikasi email
+      if (!data.user.email_confirmed_at) {
+        message = "Email belum diverifikasi. Silakan cek inbox kamu.";
         return;
       }
 
-      message = `Login berhasil! Selamat datang, ${data.username}`;
+      // redirect berdasarkan role (jika ada di metadata)
+      const role = data.user.user_metadata?.role || "admin";
 
-      if (data.role === "admin") {
+      if (role === "admin") {
+        message = "Login berhasil! Mengalihkan ke admin...";
         goto("/admin");
       } else {
+        message = "Login berhasil! Mengalihkan ke user...";
         goto("/user");
       }
-    } catch (err) {
-      message = err instanceof Error ? err.message : String(err);
     }
-  }
+  };
 </script>
 
 <div class="auth-container">
@@ -46,32 +48,32 @@
       <img src="/logo3.png" alt="Logo" class="logo" />
       <h2>Dialog Senja</h2>
       <p>Silakan login untuk melanjutkan</p>
-      <p>Click Tombol Pakai</p>
     </div>
 
     <form on:submit|preventDefault={handleLogin} class="auth-form">
       <div class="input-group">
         <input type="email" placeholder="Email" bind:value={email} required />
-        <button type="button" class="use-btn" on:click={useDemoCredentials} style="background-color: black; color :white">Pakai</button>
       </div>
 
       <div class="input-group">
-        <input type="password" placeholder="Password" bind:value={password} required />
-        <!-- <button type="button" class="use-btn" on:click={useDemoCredentials}></button> -->
+        <input
+          type="password"
+          placeholder="Password"
+          bind:value={password}
+          required
+        />
       </div>
 
       <button type="submit">Login</button>
     </form>
 
-    <!-- <p class="switch" on:click={() => goto("/register")}>
-      Belum punya akun? <span>Register</span>
-    </p> -->
-
-    <p>Click tombol pakai</p>
-
-    {#if message}
+     {#if message}
       <p class="message">{message}</p>
     {/if}
+
+    <p class="switch" on:click={() => goto("/register")}>
+      Sudah punya akun? <span>Register</span>
+    </p>
   </div>
 </div>
 
@@ -95,18 +97,17 @@
     width: 100%;
     max-width: 400px;
     border-radius: 12px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
     text-align: center;
   }
 
   .auth-header .logo {
-  width: 60px;
-  height: 60px; /* biar jadi kotak sempurna */
-  border-radius: 50%; /* bikin lingkaran */
-  object-fit: cover;  /* jaga proporsi gambar */
-  margin-bottom: 0.5rem;
-}
-
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 0.5rem;
+  }
 
   .auth-header h2 {
     margin: 0;
@@ -143,7 +144,7 @@
   .input-group input:focus {
     outline: none;
     border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59,130,246,0.3);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
   }
 
   .use-btn {
@@ -174,19 +175,6 @@
 
   .auth-form button[type="submit"]:hover {
     background: #535957;
-  }
-  
-
-  .switch {
-    margin-top: 1rem;
-    font-size: 0.9rem;
-    color: #374151;
-  }
-
-  .switch span {
-    color: #10b981;
-    cursor: pointer;
-    font-weight: bold;
   }
 
   .message {
