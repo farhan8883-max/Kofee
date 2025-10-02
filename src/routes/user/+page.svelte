@@ -5,7 +5,7 @@
   let customerName: string = "";
   let cart: { name: string; price: number; qty: number; image: string }[] = [];
   let message: string = "";
-  let activeCategory: string = "Makanan";
+  let activeCategory: string = "Cofee";
   let showCart: boolean = false;
   let showSummary: boolean = false;
   let paymentMethod: "qris" | "cash" | "" = "";
@@ -20,20 +20,34 @@
 
   const menu = [
     {
-      category: "Makanan",
+      category: "Cofee",
       items: [
-        { name: "Nasi Goreng", price: 20000, image: "/Nasi Goreng Teri Pete.png", bestSeller: true, rating: 4.8 },
-        { name: "Mie Goreng", price: 20000, image: "/miegoreng.png", bestSeller: false, rating: 4.2 },
-        { name: "Mie rebus", price: 15000, image: "/mierebus.png", bestSeller: true, rating: 4.5 },
-        { name: "Mie Ayam", price: 25000, image: "/Mie ayam.png", bestSeller: false, rating: 4.0 },
+        { name: "Ekspresso", price: 12000, image: "/logo3.png", bestSeller: true, rating: 4.8 },
+        { name: "Cappucino", price: 23000, image: "/logo3.png", bestSeller: false, rating: 4.2 },
+        { name: "Coffe Latte", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.5 },
+        { name: "Americano", price: 15000, image: "/logo3.png", bestSeller: false, rating: 4.0 },
+        { name: "Coffe Milk", price: 12000, image: "/logo3.png", bestSeller: true, rating: 4.5 },
+        { name: "Vanilla Latte", price: 23000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Brown Sugar Cofee", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Matcha Latte", price: 15000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
       ],
     },
     {
-      category: "Minuman",
+      category: "Non Cofee",
       items: [
-        { name: "Es Teh", price: 5000, image: "/tehobeng.png", bestSeller: false, rating: 4.1 },
-        { name: "Kopi Torabica", price: 10000, image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93", bestSeller: true, rating: 4.9 },
-        { name: "Kopi Dialog senja", price: 10000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Matcha", price: 12000, image: "/logo3.png", bestSeller: false, rating: 4.1 },
+        { name: "Red Velvet", price: 23000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Vanilla", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Chocolatte", price: 15000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Cokies & Cream", price: 10000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+      ],
+    },
+    {
+      category: "Tea",
+      items: [
+        { name: "Lemon Tea", price: 12000, image: "/logo3.png", bestSeller: false, rating: 4.1 },
+        { name: "Lychee Tea", price: 23000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Milk Tee", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
       ],
     },
   ];
@@ -340,7 +354,7 @@ body {
 /* Topbar Mobile */
 .topbar-mobile {
   display: none;
-  background: #00754a;
+  background: #000000;
   color: white;
   padding: 10px 15px;
   justify-content: space-between;
@@ -355,11 +369,11 @@ body {
 }
 .brand-mobile { font-weight: bold; }
 .topbar-mobile .cart-btn {
-  background: #005f3b;
+  background: #ffffff;
   padding: 6px 12px;
   border-radius: 8px;
   border: none;
-  color: white;
+  color: rgb(0, 0, 0);
   font-weight: bold;
   cursor: pointer;
 }
@@ -367,8 +381,9 @@ body {
 /* Sidebar kiri */
 .sidebar {
   width: 220px;
-  background: #00754a;
-  color: white;
+  background: #ffffff;
+  color: rgb(0, 0, 0);
+  box-shadow: 1px 5px 2px black;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -389,20 +404,20 @@ body {
   padding: 10px 15px;
   border-radius: 12px;
   border: none;
-  background: #00a66a;
+  background: #000000;
   color: white;
   font-weight: 600;
   cursor: pointer;
   text-align: left;
 }
-.categories button.selected { background: #fff; color: #00754a; }
+.categories button.selected { background: #363535; color: #feffff; }
 .cart-btn.desktop {
   margin-top: 30px;
   width: 100%;
   padding: 8px;
   border-radius: 12px;
   border: none;
-  background: #005f3b;
+  background: #000000;
   color: white;
   font-weight: bold;
   cursor: pointer;
@@ -431,8 +446,8 @@ body {
   position: relative;
   background: white;
   border-radius: 16px;
+  box-shadow: 3px 3px 20px black;
   padding: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -470,7 +485,7 @@ body {
   font-size: 0.8rem;
 }
 .card input { width: 60px; padding: 5px; border-radius: 8px; border: 1px solid #ccc; text-align: center; margin-bottom: 10px; }
-.card button { background: #00754a; color: white; border: none; border-radius: 12px; padding: 10px; cursor: pointer; font-weight: 600; }
+.card button { background: #000000; color: white; border: none; border-radius: 12px; padding: 10px; cursor: pointer; font-weight: 600; }
 
 /* Modal */
 .modal-overlay {
@@ -496,9 +511,9 @@ body {
 .modal li { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #eee; }
 .modal .remove { background:none; border:none; color:red; cursor:pointer; font-size:16px; }
 .modal .total { font-weight:bold; margin:10px 0; }
-.modal .checkout { width:100%; padding:12px; background:#00754a; color:white; border:none; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; }
+.modal .checkout { width:100%; padding:12px; background:#000000; color:white; border:none; border-radius:12px; font-size:16px; font-weight:bold; cursor:pointer; }
 .modal .close-btn { margin-top:12px; width:100%; padding:10px; background:#ccc; border:none; border-radius:8px; cursor:pointer; }
-.modal .msg { margin: 10px 0; color: #00754a; font-weight: bold; }
+.modal .msg { margin: 10px 0; color: #000000; font-weight: bold; }
 
 /* QRIS & Cash */
 .payment-method {
@@ -570,9 +585,9 @@ body {
 }
 
 .order-type label.selected {
-  border-color: #00754a;
+  border-color: #000000;
   background: #e6f9f0;
-  color: #00754a;
+  color: #000000;
 }
 
 .order-type input {
