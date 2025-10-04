@@ -71,8 +71,8 @@
       <p class="message">{message}</p>
     {/if}
 
-    <p class="switch" on:click={() => goto("/register")}>
-      Sudah punya akun? <span>Register</span>
+    <p class="switch" on:click={() => goto("/user")}>
+      Kembali ke <span>Menu</span>
     </p>
   </div>
 </div>
