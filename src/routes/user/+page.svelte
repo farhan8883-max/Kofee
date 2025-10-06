@@ -2,44 +2,25 @@
   import { supabase } from "../../lib/supabaseClient";
   import { goto } from "$app/navigation";
 
-  // ==========================
-  // STATE & DATA
-  // ==========================
   let customerName: string = "";
   let cart: { name: string; price: number; qty: number; image: string }[] = [];
   let message: string = "";
-  let activeCategory: string = "Cofee ☕";
+  let activeCategory: string = "Cofee";
   let showCart: boolean = false;
   let showSummary: boolean = false;
   let paymentMethod: "qris" | "cash" | "" = "";
   let qrisImage = "/qris.png";
   let showSidebar: boolean = false;
-  let orderType: "dine_in" | "take_away" = "dine_in";
-  let qrisProofFile: File | null = null;
-  let qrisPreview: string | null = null;
-  let qrisProofUrl: string | null = null;
+  let orderType: "dine_in" | "take_away" = "dine_in"; // default
+  
 
-  // ==========================
-  // SLIDER BANNER
-  // ==========================
-  let banners = [
-    { image: "/coffelate.jpeg", title: "Kopi Nikmat Setiap Hari", desc: "Temani harimu dengan segelas kopi terbaik dari kami." },
-    { image: "/coppucino.jpeg", title: "Minuman Segar", desc: "Rasakan kesegaran es teh dan minuman non-coffee favoritmu!" },
-    { image: "/espresso.jpeg", title: "Best Seller Minggu Ini", desc: "Coba menu paling populer pilihan pelanggan kami!" },
-  ];
+  let qrisProofFile: File | null = null;     // file asli
+  let qrisPreview: string | null = null;     // preview lokal
+  let qrisProofUrl: string | null = null;    // URL dari Supabase
 
-  let currentBanner = 0;
-  function nextBanner() {
-    currentBanner = (currentBanner + 1) % banners.length;
-  }
-  setInterval(nextBanner, 4000);
-
-  // ==========================
-  // MENU
-  // ==========================
   const menu = [
     {
-      category: "Cofee ☕",
+      category: "Cofee",
       items: [
         { name: "Ekspresso", price: 12000, image: "/logo3.png", bestSeller: true, rating: 4.8 },
         { name: "Cappucino", price: 23000, image: "/logo3.png", bestSeller: false, rating: 4.2 },
@@ -52,7 +33,7 @@
       ],
     },
     {
-      category: "Non Cofee 🥤",
+      category: "Non Cofee",
       items: [
         { name: "Matcha", price: 12000, image: "/logo3.png", bestSeller: false, rating: 4.1 },
         { name: "Red Velvet", price: 23000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
@@ -62,7 +43,7 @@
       ],
     },
     {
-      category: "Tea 🥃",
+      category: "Tea",
       items: [
         { name: "Lemon Tea", price: 12000, image: "/logo3.png", bestSeller: false, rating: 4.1 },
         { name: "Lychee Tea", price: 23000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
@@ -72,22 +53,32 @@
   ];
 
   let qtySelections: Record<string, number> = {};
-  interface Item { name: string; price: number; image: string; }
-  function goToLogin() { goto("/login"); }
 
-  let addedItems: Record<string, boolean> = {};
-
-  function addToCart(item: Item) {
-    const qty = qtySelections[item.name] || 1;
-    if (qty <= 0) return;
-
-    const existing = cart.find((c) => c.name === item.name);
-    if (existing) existing.qty += qty;
-    else cart = [...cart, { ...item, qty }];
-
-    qtySelections[item.name] = 1;
-    addedItems[item.name] = true;
+  interface Item {
+    name: string;
+    price: number;
+    image: string;
   }
+
+  function goToLogin() {
+    goto("/login");
+  }
+
+  let addedItems: Record<string, boolean> = {}; // menyimpan state tombol sudah diklik
+
+function addToCart(item: Item) {
+  const qty = qtySelections[item.name] || 1;
+  if (qty <= 0) return;
+
+  const existing = cart.find((c) => c.name === item.name);
+  if (existing) existing.qty += qty;
+  else cart = [...cart, { ...item, qty }];
+
+  qtySelections[item.name] = 1;
+
+  // tandai item sudah pernah ditambahkan
+  addedItems[item.name] = true;
+}
 
   function removeFromCart(name: string) {
     cart = cart.filter((c) => c.name !== name);
@@ -95,56 +86,58 @@
 
   $: total = cart.reduce((sum, c) => sum + c.price * c.qty, 0);
 
-  // ==========================
-  // CHECKOUT
-  // ==========================
-  async function handleCheckout() {
-    if (!customerName || cart.length === 0 || !paymentMethod) {
-      message = "Isi nama, pilih menu, dan metode pembayaran!";
-      return;
-    }
+async function handleCheckout() {
+  if (!customerName || cart.length === 0 || !paymentMethod) {
+    message = "Isi nama, pilih menu, dan metode pembayaran!";
+    return;
+  }
 
-    if (paymentMethod === "qris" && !qrisProofFile) {
+  if (paymentMethod === "qris") {
+    if (!qrisProofFile) {
       message = "Upload bukti pembayaran QRIS terlebih dahulu!";
       return;
     }
-
-    try {
-      qrisProofUrl = null;
-
-      if (paymentMethod === "qris" && qrisProofFile) {
-        const fileName = `${Date.now()}-${qrisProofFile.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from("qris_proofs")
-          .upload(fileName, qrisProofFile);
-        if (uploadError) throw uploadError;
-
-        qrisProofUrl = supabase.storage.from("qris_proofs").getPublicUrl(fileName).data.publicUrl;
-      }
-
-      const { error } = await supabase.from("orders").insert([
-        {
-          customer_name: customerName,
-          items: cart,
-          total_price: total,
-          status: "pending",
-          payment_method: paymentMethod,
-          order_type: orderType,
-          qris_proof: qrisProofUrl,
-        },
-      ]);
-
-      if (error) throw error;
-      message = "Pesanan berhasil dikirim ke admin!";
-      showSummary = true;
-    } catch (err: unknown) {
-      message = err instanceof Error ? err.message : String(err);
-    }
   }
 
-  // ==========================
-  // UTIL
-  // ==========================
+  try {
+    qrisProofUrl = null;
+
+    if (paymentMethod === "qris" && qrisProofFile) {
+      const fileName = `${Date.now()}-${qrisProofFile.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from("qris_proofs")
+        .upload(fileName, qrisProofFile);
+
+      if (uploadError) throw uploadError;
+
+      qrisProofUrl = supabase.storage
+        .from("qris_proofs")
+        .getPublicUrl(fileName).data.publicUrl;
+    }
+
+    const { error } = await supabase.from("orders").insert([
+  {
+    customer_name: customerName,
+    items: cart,
+    total_price: total,
+    status: "pending",
+    payment_method: paymentMethod,
+    order_type: orderType,   // ✅ sudah sesuai constraint
+    qris_proof: qrisProofUrl,
+  },
+]);
+
+    if (error) throw error;
+
+    message = "Pesanan berhasil dikirim ke admin!";
+    showSummary = true;
+  } catch (err: unknown) {
+    message = err instanceof Error ? err.message : String(err);
+  }
+}
+
+
+  // render bintang rating
   function renderStars(rating: number) {
     const fullStars = Math.floor(rating);
     const halfStar = rating % 1 >= 0.5;
@@ -152,10 +145,15 @@
     return stars.padEnd(5, "☆");
   }
 
+  // handle preview file bukti QRIS
   function handleFileChange(e: Event) {
     const file = (e.target as HTMLInputElement).files?.[0] || null;
     qrisProofFile = file;
-    qrisPreview = file ? URL.createObjectURL(file) : null;
+    if (file) {
+      qrisPreview = URL.createObjectURL(file);
+    } else {
+      qrisPreview = null;
+    }
   }
 </script>
 
@@ -175,7 +173,7 @@
     </div>
 
     <nav class="categories">
-      <!-- {#each menu as group}
+      {#each menu as group}
         <button
           class:selected={activeCategory === group.category}
           on:click={() => {
@@ -185,9 +183,8 @@
         >
           {group.category}
         </button>
-      {/each} -->
+      {/each}
       <button class="login-btn desktop" on:click={goToLogin}>🔑 Login</button>
-      <a href="https://website-kofee.vercel.app/"><button class="login-btn desktop" on:click={goToLogin}>Website</button></a>
     </nav>
 
     <button class="cart-btn desktop" on:click={() => (showCart = true)}>
@@ -202,29 +199,6 @@
 
   <!-- Konten kanan -->
   <main class="content">
-    <!-- ✅ Banner Slider -->
-    <div class="banner-slider">
-      {#each banners as b, i}
-        <div class="slide {i === currentBanner ? 'active' : ''}" style="background-image: url({b.image});">
-          <div class="overlay">
-            <h2>{b.title}</h2>
-            <p>{b.desc}</p>
-          </div>
-        </div>
-      {/each}
-    </div>
-
-    <div class="category-bar">
-  {#each menu as group}
-    <button
-      class:selected={activeCategory === group.category}
-      on:click={() => (activeCategory = group.category)}
-    >
-      {group.category}
-    </button>
-  {/each}
-</div>
-
     <div class="menu-grid">
       {#each menu as group}
         {#if group.category === activeCategory}
@@ -375,55 +349,6 @@ body {
 .layout {
   display: flex;
   min-height: 100vh;
-}
-
-/* ========== Banner Slider ========== */
-.banner-slider {
-  position: relative;
-  width: 100%;
-  height: 250px;
-  overflow: hidden;
-  border-radius: 16px;
-  margin-bottom: 25px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-}
-.banner-slider .slide {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background-size: cover;
-  background-position: center;
-  opacity: 0;
-  transform: scale(1.05);
-  transition: opacity 1s ease, transform 2s ease;
-}
-.banner-slider .slide.active {
-  opacity: 1;
-  transform: scale(1);
-  z-index: 2;
-}
-.banner-slider .overlay {
-  position: absolute;
-  bottom: 20px; left: 20px;
-  color: white;
-  text-shadow: 1px 2px 4px rgba(0,0,0,0.7);
-  background: rgba(0,0,0,0.4);
-  padding: 12px 20px;
-  border-radius: 10px;
-  max-width: 80%;
-}
-.banner-slider h2 {
-  font-size: 1.6rem; margin: 0; font-weight: 700;
-}
-.banner-slider p {
-  margin: 6px 0 0; font-size: 1rem;
-}
-
-/* Responsif banner */
-@media (max-width: 600px) {
-  .banner-slider { height: 180px; }
-  .banner-slider h2 { font-size: 1.2rem; }
-  .banner-slider p { font-size: 0.9rem; }
 }
 
 /* Topbar Mobile */
@@ -675,56 +600,6 @@ body {
   font-weight: 600;
   color: #00754a;
 }
-/* ========== CATEGORY BAR (di atas menu) ========== */
-.category-bar {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
-}
-
-.category-bar::-webkit-scrollbar {
-  display: none; /* sembunyikan scrollbar */
-}
-
-.category-bar button {
-  flex: 0 0 auto;
-  padding: 10px 16px;
-  border-radius: 20px;
-  border: none;
-  background: #000;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  scroll-snap-align: start;
-  transition: all 0.2s ease;
-}
-
-.category-bar button.selected {
-  background: #363535;
-  transform: scale(1.05);
-}
-
-.category-bar button:hover {
-  background: #222;
-}
-
-/* Responsif: rapatkan sedikit di layar kecil */
-@media (max-width: 800px) {
-  .category-bar {
-    padding: 0 10px;
-    margin-bottom: 15px;
-  }
-  .category-bar button {
-    font-size: 0.9rem;
-    padding: 8px 14px;
-  }
-}
-
 </style>
 
 
