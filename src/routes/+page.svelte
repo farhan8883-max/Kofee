@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { supabase } from "../../lib/supabaseClient";
+  import { supabase } from "$lib/supabaseClient";
   import { goto } from "$app/navigation";
 
   // ==========================
