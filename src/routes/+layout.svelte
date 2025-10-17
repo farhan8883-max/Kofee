@@ -5,9 +5,11 @@
 </script>
 
 <svelte:head>
-	<!-- <link rel="icon" href={favicon} /> -->
-	 <link rel="icon" href="/logo.png" />
-    <title>Dialog Senja</title>
+  <title>Dialog Senja</title>
+  <link rel="icon" type="image/png" href="/logo.png" />
 </svelte:head>
 
 {@render children?.()}
+
+
+
