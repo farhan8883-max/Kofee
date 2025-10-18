@@ -39,34 +39,33 @@
   // ==========================
   const menu = [
     {
-      category: "Cofee ☕",
+      category: "Cofee",
       items: [
-        { name: "Ekspresso", price: 12000, image: "/logo3.png", bestSeller: true, rating: 4.8 },
-        { name: "Cappucino", price: 23000, image: "/logo3.png", bestSeller: false, rating: 4.2 },
-        { name: "Coffe Latte", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.5 },
-        { name: "Americano", price: 15000, image: "/logo3.png", bestSeller: false, rating: 4.0 },
-        { name: "Coffe Milk", price: 12000, image: "/logo3.png", bestSeller: true, rating: 4.5 },
-        { name: "Vanilla Latte", price: 23000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
-        { name: "Brown Sugar Cofee", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
-        { name: "Matcha Latte", price: 15000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Caramel Latte", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.8 },
+        { name: "Coffe Latte", price: 20000, image: "/logo3.png", bestSeller: true, rating: 4.5 },
+        { name: "Americano", price: 18000, image: "/logo3.png", bestSeller: false, rating: 4.0 },
+        { name: "Americano Peach", price: 20000, image: "/logo3.png", bestSeller: true, rating: 4.5 },
+        { name: "Vanilla Latte", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Matcha Coffee", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Palm Sugar Coffee", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Butterscoth Latte", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
       ],
     },
     {
-      category: "Non Cofee 🥤",
+      category: "Non Cofee",
       items: [
-        { name: "Matcha", price: 12000, image: "/logo3.png", bestSeller: false, rating: 4.1 },
-        { name: "Red Velvet", price: 23000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Matcha", price: 20000, image: "/logo3.png", bestSeller: false, rating: 4.1 },
+        { name: "Red Velvet", price: 20000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
         { name: "Vanilla", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
-        { name: "Chocolatte", price: 15000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Chocolatte", price: 20000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
         { name: "Cokies & Cream", price: 10000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
       ],
     },
     {
-      category: "Tea 🥃",
+      category: "Tea",
       items: [
-        { name: "Lemon Tea", price: 12000, image: "/logo3.png", bestSeller: false, rating: 4.1 },
-        { name: "Lychee Tea", price: 23000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
-        { name: "Milk Tee", price: 22000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
+        { name: "Lemon Tea", price: 18000, image: "/logo3.png", bestSeller: false, rating: 4.1 },
+        { name: "Lychee Tea", price: 18000, image: "/logo3.png", bestSeller: true, rating: 4.9 },
       ],
     },
   ];
