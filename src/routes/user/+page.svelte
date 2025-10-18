@@ -8,7 +8,7 @@
   let customerName: string = "";
   let cart: { name: string; price: number; qty: number; image: string }[] = [];
   let message: string = "";
-  let activeCategory: string = "Cofee ☕";
+  let activeCategory: string = "Cofee";
   let showCart: boolean = false;
   let showSummary: boolean = false;
   let paymentMethod: "qris" | "cash" | "" = "";
